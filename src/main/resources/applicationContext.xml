@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<beans>
+    <bean id="emailService" class="com.ioc.client.EmailSender">
+        <property name="protocol" value="TCP"/>
+        <property name="port" value="1234"/>
+    </bean>
+
+    <bean id="userService" class="com.ioc.client.EmailSender">
+        <property name="emailService" ref="emailService"/>
+    </bean>
+</beans>
