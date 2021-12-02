@@ -1,8 +1,12 @@
 package com.ioc.client;
 
+import lombok.Data;
+
 import java.util.List;
 
+@Data
 public class UserService {
+    private String name;
     private EmailSender emailSender;
 
     public void setEmailSender(EmailSender emailSender) {
