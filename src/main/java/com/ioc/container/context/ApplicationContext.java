@@ -2,12 +2,12 @@ package com.ioc.container.context;
 
 import java.util.List;
 
-public interface ApplicationContext<T> {
+public interface ApplicationContext {
     Object getBean(String beanId);
 
-    T getBean(Class<T> clazz);
+    <T> T getBean(Class<T> clazz);
 
-    T getBean(String id, Class<T> clazz);
+    <T> T getBean(String id, Class<T> clazz);
 
     List<String> getBeanNames();
 }
