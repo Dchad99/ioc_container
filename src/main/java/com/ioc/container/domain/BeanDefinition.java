@@ -1,6 +1,7 @@
 package com.ioc.container.domain;
 
 import lombok.Data;
+
 import java.util.Map;
 
 @Data
@@ -9,5 +10,4 @@ public class BeanDefinition {
     private String className;
     private Map<String, String> valueDependencies;
     private Map<String, String> refDependencies;
-
 }
