@@ -4,6 +4,7 @@ import com.ioc.container.domain.Bean;
 import com.ioc.container.domain.BeanDefinition;
 import com.ioc.container.reader.BeanDefinitionReader;
 import com.ioc.container.reader.XMLBeanDefinitionReader;
+import com.ioc.exception.NotFoundBeanException;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import java.lang.reflect.Field;
@@ -15,7 +16,7 @@ import java.util.Map;
 
 @Slf4j
 public class ClassPathApplicationContext implements ApplicationContext {
-    private BeanDefinitionReader beanDefinitionReader;
+    private final BeanDefinitionReader beanDefinitionReader;
     private List<Bean> beans;
     List<BeanDefinition> beanDefinitions;
 
@@ -43,10 +44,12 @@ public class ClassPathApplicationContext implements ApplicationContext {
 
     @Override
     public <T> T getBean(Class<T> clazz) {
+        T result = null;
         for (Bean bean : beans) {
             Class<?> aClass = bean.getValue().getClass();
-            if (aClass.equals(clazz)) {
-                return (T) bean;
+            if (clazz.isAssignableFrom(aClass)) {
+                result = clazz.cast(bean.getValue());
+                return result;
             }
         }
         return null;
@@ -55,7 +58,7 @@ public class ClassPathApplicationContext implements ApplicationContext {
     @Override
     public <T> T getBean(String id, Class<T> clazz) {
         for (Bean bean : beans) {
-            if (bean.getValue().getClass().equals(clazz) && bean.getId().equals(id)) {
+            if (bean.getValue().getClass().isAssignableFrom(clazz) && bean.getId().equals(id)) {
                 return (T) bean;
             }
         }
@@ -91,7 +94,11 @@ public class ClassPathApplicationContext implements ApplicationContext {
             if (beanDefinition.getValueDependencies() != null) {
                 Map<String, String> values = beanDefinition.getValueDependencies();
                 Bean bean = getBeanById(beanList, beanDefinition.getId());
-                values.forEach((k, v) -> injectValueBySetter(bean, k, v));
+                if(bean != null) {
+                    values.forEach((k, v) -> injectValueBySetter(bean, k, v));
+                } else {
+                    throw new NotFoundBeanException();
+                }
             }
         }
     }
@@ -105,13 +112,10 @@ public class ClassPathApplicationContext implements ApplicationContext {
         return null;
     }
 
-
     @SneakyThrows
     private void injectValueBySetter(Bean bean, String fieldName, String fieldValue) {
         try {
-            Field beanValueField = bean.getClass().getDeclaredField("value");
-            beanValueField.setAccessible(true);
-            Object storedObject = beanValueField.get(bean);
+            Object storedObject = bean.getValue();
             Field declaredField = storedObject.getClass().getDeclaredField(fieldName);
             declaredField.setAccessible(true);
 
@@ -160,18 +164,15 @@ public class ClassPathApplicationContext implements ApplicationContext {
         }
     }
 
-
     private void injectReferences(Bean bean, String fieldName, Object refObject) {
         try {
-            Field beanValueField = bean.getClass().getDeclaredField("value");
-            beanValueField.setAccessible(true);
-            Object storedObject = beanValueField.get(bean);
+            Object storedObject = bean.getValue();
             for (Method method : storedObject.getClass().getMethods()) {
                 if (method.getName().startsWith("set") && method.getName().toLowerCase().endsWith(fieldName.toLowerCase())) {
                     method.invoke(storedObject, refObject);
                 }
             }
-        } catch (NoSuchFieldException | IllegalAccessException | InvocationTargetException e) {
+        } catch (IllegalAccessException | InvocationTargetException e) {
             e.printStackTrace();
         }
     }
