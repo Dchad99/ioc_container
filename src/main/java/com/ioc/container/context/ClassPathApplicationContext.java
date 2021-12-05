@@ -57,9 +57,11 @@ public class ClassPathApplicationContext implements ApplicationContext {
 
     @Override
     public <T> T getBean(String id, Class<T> clazz) {
+        T result = null;
         for (Bean bean : beans) {
             if (bean.getValue().getClass().isAssignableFrom(clazz) && bean.getId().equals(id)) {
-                return (T) bean;
+                result = clazz.cast(bean.getValue());
+                return result;
             }
         }
         return null;
